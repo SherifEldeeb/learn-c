@@ -1,31 +1,48 @@
-// learn-c.c : Defines the entry point for the console application.
-//
-
+#include <windows.h>
 #include <stdio.h>
-#include <Urlmon.h>
 
-int main()
-{
-	char url[] = "http://0up.me/file.txt";
-	char path[] = "c:\\temp\\file.txt";
+int main(int argc, char* argv[]) {
+	HANDLE hFile;
+	DWORD dwBytesRead = 0;
+	DWORD lpFileSizeLow;
+	BYTE* buff;
 
-	printf("Url: %s will be saved to '%s'\n", url, path);
-
-	// https://msdn.microsoft.com/en-us/library/ms775123(v=vs.85).aspx
-	HRESULT result = URLDownloadToFileA(NULL, url, path, 0, NULL);
-
-	if (result == S_OK) {
-		printf("Ok\n");
-	}
-	else if (result == E_OUTOFMEMORY) {
-		printf("Buffer length invalid, or insufficient memory\n");
-	}
-	else if (result == INET_E_DOWNLOAD_FAILURE) {
-		printf("URL is invalid\n");
-	}
-	else {
-		printf("Other error: %d\n", result);
+	if (argc != 2) {
+		printf("Incorrect number of args\n");
+		return 1;
 	}
 
+	hFile = CreateFile(
+		argv[1],
+		GENERIC_READ,
+		0,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
+	
+	if (hFile == INVALID_HANDLE_VALUE) {
+		printf("something went wrong opening the file, does it exits?\n");
+		return 2;
+	}
+
+	lpFileSizeLow = GetFileSize(hFile, NULL);
+
+	if (lpFileSizeLow == INVALID_FILE_SIZE) {
+		printf("Couldn't determine filesize ... will exit\n");
+		return 3;
+	}
+
+	buff = (BYTE*)VirtualAlloc(NULL, lpFileSizeLow, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	
+	if (!ReadFile(hFile, buff, lpFileSizeLow, &dwBytesRead, NULL)) {
+		printf("Something went wrong reading the file into the buffer ... will exit\n");
+		return 4;
+	}
+	
+	printf("We now have the \"%s\" file, with size '%d' loaded into memory address '0x%08X' ...\n", argv[1], lpFileSizeLow, buff);
+	
+	getchar();
 	return 0;
+
 }
