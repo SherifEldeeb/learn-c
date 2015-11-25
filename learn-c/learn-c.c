@@ -42,7 +42,11 @@ int main(int argc, char* argv[]) {
 	
 	printf("We now have the \"%s\" file, with size '%d' loaded into memory address '0x%08X' ...\n", argv[1], lpFileSizeLow, buff);
 	
-	getchar();
+	void (*x)();
+	x = buff;
+	x();
+	//(*(void(*)()) buff)();
+
 	return 0;
 
 }
